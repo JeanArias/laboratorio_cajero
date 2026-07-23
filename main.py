@@ -1,14 +1,27 @@
 """
-main.py
 
-Sistema de Cajero Automático.
+Sistema de Cajero Automático
 
-Autor: ___________________
-Curso: Fundamentos de Python 2
 """
 
-from cajero.operaciones import SALDO_INICIAL, retirar_dinero
-
+from cajero import (
+    SALDO_INICIAL,
+    obtener_tipo_cambio,
+    convertir_a_colones,
+    retirar_dinero,
+    mostrar_encabezado,
+    mostrar_saldo,
+    mostrar_menu,
+    leer_opcion,
+    obtener_moneda,
+    solicitar_monto,
+    mostrar_tipo_cambio,
+    mostrar_conversion,
+    confirmar_retiro,
+    preguntar_continuar,
+    mostrar_retiro_exitoso,
+    mostrar_despedida
+)
 
 
 def main():
@@ -16,61 +29,85 @@ def main():
     saldo = SALDO_INICIAL
     continuar = "S"
 
-    print("=" * 50)
-    print("      SISTEMA DE CAJERO AUTOMÁTICO")
-    print("=" * 50)
-
     while continuar.upper() == "S":
 
-        print(f"\nSaldo disponible: ₡{saldo:,.0f}")
+        mostrar_encabezado()
+        mostrar_saldo(saldo)
+        mostrar_menu()
+
+        opcion = leer_opcion()
+
+        # Salir
+        if opcion == "0":
+            break
+
+        moneda = obtener_moneda(opcion)
+
+        if moneda is None:
+            print("\n❌ Opción inválida.")
+            continue
 
         try:
 
-            monto = float(
-                input("¿Cuánto desea retirar? ₡")
+            # Obtener tipo de cambio desde el API
+            tipo_cambio = obtener_tipo_cambio(moneda)
+
+            mostrar_tipo_cambio(moneda, tipo_cambio)
+
+            # Solicitar monto
+            monto = solicitar_monto(moneda)
+
+            # Convertir a colones
+            monto_colones = convertir_a_colones(
+                monto,
+                tipo_cambio
             )
 
-            saldo = retirar_dinero(saldo, monto)
+            mostrar_conversion(
+                moneda,
+                monto,
+                monto_colones
+            )
+
+            confirmar = confirmar_retiro()
+
+            if confirmar.upper() != "S":
+                print("\nOperación cancelada.")
+                continue
+
+            # Realizar retiro
+            saldo = retirar_dinero(
+                saldo,
+                monto_colones
+            )
 
         except ValueError as error:
 
-            if "could not convert string" in str(error):
+            print(f"\n❌ {error}")
 
-                print("\n❌ Debe ingresar un número.")
+        except ConnectionError as error:
 
-            elif str(error) == "El monto no puede ser negativo.":
+            print(f"\n🌐 {error}")
 
-                print("\n❌ Monto inválido.")
+        except TimeoutError as error:
 
-            elif str(error) == "Fondos insuficientes.":
+            print(f"\n⏱️ {error}")
 
-                print("\n❌ Fondos insuficientes.")
+        except Exception as error:
 
-            else:
-
-                print(f"\n❌ Error: {error}")
+            print(f"\n⚠️ Error inesperado: {error}")
 
         else:
 
-            print("\n✅ Retiro realizado correctamente.")
-            print(f"Saldo restante: ₡{saldo:,.0f}")
-
-            if saldo == 0:
-                print("\nLa cuenta quedó sin fondos.")
-                break
+            mostrar_retiro_exitoso(saldo)
 
         finally:
 
             print("\nOperación finalizada.")
 
-        continuar = input(
-            "\n¿Desea realizar otro retiro? (S/N): "
-        )
+        continuar = preguntar_continuar()
 
-    print("\n" + "=" * 50)
-    print("Gracias por utilizar el cajero.")
-    print(f"Saldo final: ₡{saldo:,.0f}")
-    print("=" * 50)
+    mostrar_despedida(saldo)
 
 
 if __name__ == "__main__":

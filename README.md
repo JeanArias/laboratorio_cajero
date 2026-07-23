@@ -1,0 +1,1 @@
+Instale requests y ejecute python main.py
